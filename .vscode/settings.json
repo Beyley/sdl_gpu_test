@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "sdl_main.h": "c",
+        "sdl.h": "c",
+        "sdl_gpu_shadercross.h": "c",
+        "format": "c",
+        "thread": "c",
+        "vector": "c",
+        "ios": "c",
+        "stb_image.h": "c",
+        "app.h": "c",
+        "gfx.h": "c"
+    },
+    "glsllint.glslangValidatorArgs": ["-V"],
+}

@@ -1,0 +1,6 @@
+[submodule "SDL_gpu_shadercross"]
+	path = SDL_gpu_shadercross
+	url = https://github.com/flibitijibibo/SDL_gpu_shadercross
+[submodule "stb"]
+	path = stb
+	url = https://github.com/nothings/stb/
