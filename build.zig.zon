@@ -2,7 +2,11 @@
     .name = "sdl_gpu_test",
     .version = "0.0.0",
 
-    .dependencies = .{},
+    .dependencies = .{
+        .spirv_cross = .{
+            .path = "SPIRV-Cross/",
+        },
+    },
 
     .paths = .{
         "build.zig",

@@ -34,6 +34,14 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const spirv_cross_dep = b.dependency("spirv_cross", .{
+        .target = target,
+        .optimize = optimize,
+        .spv_cross_cpp = false,
+        .spv_cross_reflect = false,
+        .spv_cross_build_shared = false,
+    });
+
     const files = b.addStaticLibrary(.{
         .name = "files",
         .root_source_file = b.path("src/embed.zig"),
@@ -56,6 +64,10 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    exe.linkLibrary(spirv_cross_dep.artifact("spirv-cross-c"));
+    exe.root_module.addCMacro("SDL_GPU_SHADERCROSS_SPIRV", "1");
+    exe.root_module.addCMacro("SDL_GPU_SHADERCROSS_STATIC", "1");
 
     exe.linkLibrary(files);
 
