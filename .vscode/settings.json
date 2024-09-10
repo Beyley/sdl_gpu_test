@@ -9,7 +9,10 @@
         "ios": "c",
         "stb_image.h": "c",
         "app.h": "c",
-        "gfx.h": "c"
+        "gfx.h": "c",
+        "cstdlib": "c",
+        "ranges": "c",
+        "valarray": "c"
     },
     "glsllint.glslangValidatorArgs": ["-V"],
 }

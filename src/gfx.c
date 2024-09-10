@@ -2,8 +2,14 @@
 
 bool gfx_init(app_state_t *app_state)
 {
-    // Init the GPU device with the shader formats supported by shadercross
-    app_state->gpu_device = SDL_CreateGPUDevice(SDL_ShaderCross_GetShaderFormats(), true, NULL);
+    if(!SDL_ShaderCross_Init())
+    {
+        SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Failed to init SDL_ShaderCross, error %s", SDL_GetError());
+        return false;
+    }
+
+    // Init the GPU device with the shader formats supported by shadercross's SPIRV intake
+    app_state->gpu_device = SDL_CreateGPUDevice(SDL_ShaderCross_GetSPIRVShaderFormats(), true, NULL);
 
     if (app_state->gpu_device == NULL)
     {
@@ -80,6 +86,7 @@ bool gfx_init(app_state_t *app_state)
 
 void gfx_deinit(app_state_t *app_state)
 {
+    SDL_ShaderCross_Quit();
     SDL_ReleaseGPUTexture(app_state->gpu_device, app_state->texture);
     SDL_ReleaseGPUSampler(app_state->gpu_device, app_state->sampler);
     SDL_ReleaseGPUBuffer(app_state->gpu_device, app_state->geometry_buffer);
@@ -93,19 +100,19 @@ SDL_GPUGraphicsPipeline *gfx_create_graphics_pipeline(app_state_t *app_state)
 {
     SDL_GPUShaderCreateInfo vert_create_info = {
         .code = zigMainVertPtr(),
-        .codeSize = zigMainVertSize(),
-        .entryPointName = "main",
+        .code_size = zigMainVertSize(),
+        .entrypoint = "main",
         .format = SDL_GPU_SHADERFORMAT_SPIRV,
         .stage = SDL_GPU_SHADERSTAGE_VERTEX,
     };
 
     SDL_GPUShaderCreateInfo frag_create_info = {
         .code = zigMainFragPtr(),
-        .codeSize = zigMainFragSize(),
-        .entryPointName = "main",
+        .code_size = zigMainFragSize(),
+        .entrypoint = "main",
         .format = SDL_GPU_SHADERFORMAT_SPIRV,
         .stage = SDL_GPU_SHADERSTAGE_FRAGMENT,
-        .samplerCount = 1,
+        .num_samplers = 1,
     };
 
     SDL_GPUShader *vert_shader = SDL_ShaderCross_CompileFromSPIRV(app_state->gpu_device, &vert_create_info, false);
@@ -123,61 +130,61 @@ SDL_GPUGraphicsPipeline *gfx_create_graphics_pipeline(app_state_t *app_state)
     }
 
     SDL_GPUGraphicsPipelineCreateInfo pipeline_create_info = {
-        .vertexShader = vert_shader,
-        .fragmentShader = frag_shader,
-        .vertexInputState = {
-            .vertexAttributeCount = 2,
-            .vertexAttributes =
+        .vertex_shader = vert_shader,
+        .fragment_shader = frag_shader,
+        .vertex_input_state = {
+            .num_vertex_attributes = 2,
+            .vertex_attributes =
                 (SDL_GPUVertexAttribute[2]){
                     (SDL_GPUVertexAttribute){
                         .location = 0,
-                        .binding = 0,
+                        .binding_index = 0,
                         .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
                         .offset = 0,
                     },
                     (SDL_GPUVertexAttribute){
                         .location = 1,
-                        .binding = 0,
+                        .binding_index = 0,
                         .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
                         .offset = sizeof(float) * 2,
                     },
                 },
-            .vertexBindingCount = 1,
-            .vertexBindings = (SDL_GPUVertexBinding[1]){
+            .num_vertex_bindings = 1,
+            .vertex_bindings = (SDL_GPUVertexBinding[1]){
                 (SDL_GPUVertexBinding){
-                    .binding = 0,
-                    .inputRate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
-                    .stride = sizeof(float) * 4,
+                    .index = 0,
+                    .input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
+                    .pitch = sizeof(float) * 4,
                 },
             },
         },
-        .primitiveType = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
-        .rasterizerState = {
-            .fillMode = SDL_GPU_FILLMODE_FILL,
-            .cullMode = SDL_GPU_CULLMODE_NONE,
-            .frontFace = SDL_GPU_FRONTFACE_CLOCKWISE,
+        .primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
+        .rasterizer_state = {
+            .fill_mode = SDL_GPU_FILLMODE_FILL,
+            .cull_mode = SDL_GPU_CULLMODE_NONE,
+            .front_face = SDL_GPU_FRONTFACE_CLOCKWISE,
         },
-        .multisampleState = {
-            .sampleCount = SDL_GPU_SAMPLECOUNT_1,
-            .sampleMask = 0xF,
+        .multisample_state = {
+            .sample_count = SDL_GPU_SAMPLECOUNT_1,
+            .sample_mask = 0xF,
         },
-        .depthStencilState = {
-            .depthTestEnable = false,
-            .depthWriteEnable = false,
+        .depth_stencil_state = {
+            .enable_depth_test = false,
+            .enable_depth_write = false,
         },
-        .attachmentInfo = {
-            .colorAttachmentCount = 1,
-            .colorAttachmentDescriptions = &(SDL_GPUColorAttachmentDescription){
+        .target_info = {
+            .num_color_targets = 1,
+            .color_target_descriptions = &(SDL_GPUColorTargetDescription){
                 .format = SDL_GetGPUSwapchainTextureFormat(app_state->gpu_device, app_state->window),
-                .blendState = {
-                    .blendEnable = false,
-                    .alphaBlendOp = SDL_GPU_BLENDOP_ADD,
-                    .colorBlendOp = SDL_GPU_BLENDOP_ADD,
-                    .colorWriteMask = 0xF,
-                    .srcAlphaBlendFactor = SDL_GPU_BLENDFACTOR_ONE,
-                    .dstAlphaBlendFactor = SDL_GPU_BLENDFACTOR_ZERO,
-                    .srcColorBlendFactor = SDL_GPU_BLENDFACTOR_ONE,
-                    .dstColorBlendFactor = SDL_GPU_BLENDFACTOR_ZERO,
+                .blend_state = {
+                    .enable_blend = false,
+                    .alpha_blend_op = SDL_GPU_BLENDOP_ADD,
+                    .color_blend_op = SDL_GPU_BLENDOP_ADD,
+                    .color_write_mask = 0xF,
+                    .src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE,
+                    .dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ZERO,
+                    .src_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE,
+                    .dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ZERO,
                 },
             },
         },
@@ -213,8 +220,8 @@ SDL_GPUBuffer *gfx_create_geometry_buffer(app_state_t *app_state)
     };
 
     SDL_GPUBufferCreateInfo vert_buf_create_info = {
-        .sizeInBytes = sizeof(vertex_data), // three vec2
-        .usageFlags = SDL_GPU_BUFFERUSAGE_VERTEX,
+        .size = sizeof(vertex_data), // three vec2
+        .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
     };
 
     SDL_GPUBuffer *vert_buf = SDL_CreateGPUBuffer(app_state->gpu_device, &vert_buf_create_info);
@@ -228,7 +235,7 @@ SDL_GPUBuffer *gfx_create_geometry_buffer(app_state_t *app_state)
     SDL_SetGPUBufferName(app_state->gpu_device, vert_buf, "Static geometry");
 
     SDL_GPUTransferBufferCreateInfo transfer_buf_create_info = {
-        .sizeInBytes = sizeof(vertex_data),
+        .size = sizeof(vertex_data),
         .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
     };
 
@@ -249,7 +256,7 @@ SDL_GPUBuffer *gfx_create_geometry_buffer(app_state_t *app_state)
     SDL_UploadToGPUBuffer(copy_pass,
                           &(SDL_GPUTransferBufferLocation){
                               .offset = 0,
-                              .transferBuffer = transfer_buffer,
+                              .transfer_buffer = transfer_buffer,
                           },
                           &(SDL_GPUBufferRegion){
                               .buffer = vert_buf,
@@ -274,11 +281,11 @@ bool gfx_create_texture_sampler(app_state_t *app_state)
         .format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
         .width = (Uint32)width,
         .height = (Uint32)height,
-        .layerCountOrDepth = 1,
-        .levelCount = 1,
-        .sampleCount = 1,
+        .layer_count_or_depth = 1,
+        .num_levels = 1,
+        .sample_count = 1,
         .type = SDL_GPU_TEXTURETYPE_2D,
-        .usageFlags = SDL_GPU_TEXTUREUSAGE_SAMPLER,
+        .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
     };
 
     app_state->texture = SDL_CreateGPUTexture(app_state->gpu_device, &texture_create_info);
@@ -292,7 +299,7 @@ bool gfx_create_texture_sampler(app_state_t *app_state)
 
     auto transfer_buffer = SDL_CreateGPUTransferBuffer(app_state->gpu_device,
                                                        &(SDL_GPUTransferBufferCreateInfo){
-                                                           .sizeInBytes = (Uint32)(width * height * 4),
+                                                           .size = (Uint32)(width * height * 4),
                                                            .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
                                                        });
 
@@ -314,9 +321,9 @@ bool gfx_create_texture_sampler(app_state_t *app_state)
     SDL_UploadToGPUTexture(copy_pass,
                            &(SDL_GPUTextureTransferInfo){
                                .offset = 0,
-                               .imageHeight = (Uint32)height,
-                               .transferBuffer = transfer_buffer,
-                               .imagePitch = (Uint32)width,
+                               .rows_per_layer = (Uint32)height,
+                               .transfer_buffer = transfer_buffer,
+                               .pixels_per_row = (Uint32)width,
                            },
                            &(SDL_GPUTextureRegion){
                                .x = 0,
@@ -334,12 +341,12 @@ bool gfx_create_texture_sampler(app_state_t *app_state)
 
     app_state->sampler = SDL_CreateGPUSampler(app_state->gpu_device,
                                               &(SDL_GPUSamplerCreateInfo){
-                                                  .addressModeU = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
-                                                  .addressModeV = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
-                                                  .addressModeW = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
-                                                  .magFilter = SDL_GPU_FILTER_LINEAR,
-                                                  .minFilter = SDL_GPU_FILTER_LINEAR,
-                                                  .maxAnisotropy = 1,
+                                                  .address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
+                                                  .address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
+                                                  .address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
+                                                  .mag_filter = SDL_GPU_FILTER_LINEAR,
+                                                  .min_filter = SDL_GPU_FILTER_LINEAR,
+                                                  .max_anisotropy = 1,
                                               });
 
     if (!app_state->sampler)
@@ -367,14 +374,14 @@ bool gfx_render(app_state_t *app_state)
     // If we have a swapchain texture, run our rendering code
     if (swapchain_texture)
     {
-        SDL_GPUColorAttachmentInfo colorAttachmentInfo;
-        SDL_zero(colorAttachmentInfo);
-        colorAttachmentInfo.texture = swapchain_texture;
-
-        colorAttachmentInfo.clearColor.a = 1.0f;
-
-        colorAttachmentInfo.loadOp = SDL_GPU_LOADOP_CLEAR;
-        colorAttachmentInfo.storeOp = SDL_GPU_STOREOP_STORE;
+        SDL_GPUColorTargetInfo colorAttachmentInfo = {
+            .texture = swapchain_texture,
+            .clear_color = {
+                .a = 1.0,
+            },
+            .load_op = SDL_GPU_LOADOP_CLEAR,
+            .store_op = SDL_GPU_STOREOP_STORE,
+        };
 
         SDL_GPURenderPass *render_pass = SDL_BeginGPURenderPass(cmd_buf, &colorAttachmentInfo, 1, NULL);
 

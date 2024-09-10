@@ -83,6 +83,7 @@ pub fn build(b: *std.Build) void {
             "-Wno-declaration-after-statement",
             "-Wno-covered-switch-default",
             "-Wno-c++98-compat",
+            "-Wno-documentation-unknown-command",
         },
         .root = b.path("src"),
     });
