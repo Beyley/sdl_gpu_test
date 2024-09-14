@@ -2,7 +2,7 @@
 
 bool gfx_init(app_state_t *app_state)
 {
-    if(!SDL_ShaderCross_Init())
+    if (!SDL_ShaderCross_Init())
     {
         SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Failed to init SDL_ShaderCross, error %s", SDL_GetError());
         return false;
@@ -17,28 +17,7 @@ bool gfx_init(app_state_t *app_state)
         return false;
     }
 
-    switch (SDL_GetGPUDriver(app_state->gpu_device))
-    {
-    case SDL_GPU_DRIVER_D3D11:
-        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Using D3D11");
-        break;
-    case SDL_GPU_DRIVER_D3D12:
-        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Using D3D12");
-        break;
-    case SDL_GPU_DRIVER_METAL:
-        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Using Metal");
-        break;
-    case SDL_GPU_DRIVER_VULKAN:
-        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Using Vulkan");
-        break;
-    case SDL_GPU_DRIVER_PRIVATE:
-        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Using Secret more sinister third thing");
-        break;
-    case SDL_GPU_DRIVER_INVALID:
-    default:
-        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "invalid GPU driver %d", SDL_GetGPUDriver(app_state->gpu_device));
-        break;
-    }
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Using GPU driver %s", SDL_GetGPUDeviceDriver(app_state->gpu_device));
 
     if (!SDL_ClaimWindowForGPUDevice(app_state->gpu_device, app_state->window))
     {
@@ -138,21 +117,21 @@ SDL_GPUGraphicsPipeline *gfx_create_graphics_pipeline(app_state_t *app_state)
                 (SDL_GPUVertexAttribute[2]){
                     (SDL_GPUVertexAttribute){
                         .location = 0,
-                        .binding_index = 0,
+                        .buffer_slot = 0,
                         .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
                         .offset = 0,
                     },
                     (SDL_GPUVertexAttribute){
                         .location = 1,
-                        .binding_index = 0,
+                        .buffer_slot = 0,
                         .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
                         .offset = sizeof(float) * 2,
                     },
                 },
-            .num_vertex_bindings = 1,
-            .vertex_bindings = (SDL_GPUVertexBinding[1]){
-                (SDL_GPUVertexBinding){
-                    .index = 0,
+            .num_vertex_buffers = 1,
+            .vertex_buffer_descriptions = (SDL_GPUVertexBufferDescription[1]){
+                (SDL_GPUVertexBufferDescription){
+                    .slot = 0,
                     .input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
                     .pitch = sizeof(float) * 4,
                 },

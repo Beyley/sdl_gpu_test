@@ -34,6 +34,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    // Get SPIR-V Cross without C++, Reflect, or shared libs
     const spirv_cross_dep = b.dependency("spirv_cross", .{
         .target = target,
         .optimize = optimize,
@@ -66,8 +67,9 @@ pub fn build(b: *std.Build) void {
     });
 
     exe.linkLibrary(spirv_cross_dep.artifact("spirv-cross-c"));
-    exe.root_module.addCMacro("SDL_GPU_SHADERCROSS_SPIRV", "1");
+    exe.root_module.addCMacro("SDL_GPU_SHADERCROSS_SPIRV", "1"); // SPIRV -> HLSL/MSL/GLSL
     exe.root_module.addCMacro("SDL_GPU_SHADERCROSS_STATIC", "1");
+    exe.root_module.addCMacro("SDL_GPU_SHADERCROSS_HLSL", "1"); // SPIR-V -> HLSL
 
     exe.linkLibrary(files);
 
